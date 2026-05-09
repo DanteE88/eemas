@@ -1,29 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
 import Icon from '../components/Icon';
 import { initials } from '../utils/helpers';
+import { db } from '../services/db';
 
 const TIPOS = ['Caida', 'Golpe', 'Crisis', 'Enfermedad'];
 
-const EMPTY_INCIDENCIA = {
-  tipo: TIPOS[0],
-  reporte_papas: 'Si',
-  descripcion: '',
-  estudiante_id: '',
-  estudiante_nombre: '',
-  fecha: new Date().toISOString().split('T')[0],
-  hora: new Date().toTimeString().slice(0, 5),
-};
-
 const TIPO_COLOR = {
-  Caida:       { bg: '#fef3cd', color: 'var(--warn)',    icon: '🤕' },
-  Golpe:       { bg: 'var(--danger-bg)', color: 'var(--danger)', icon: '🤜' },
-  Crisis:      { bg: 'var(--sky-light)', color: 'var(--sky)',    icon: '⚡' },
-  Enfermedad:  { bg: 'var(--success-bg)', color: 'var(--success)', icon: '🤒' },
+  Caida:      { bg: '#fef3cd',           color: 'var(--warn)',    icon: '🤕' },
+  Golpe:      { bg: 'var(--danger-bg)',  color: 'var(--danger)',  icon: '🤜' },
+  Crisis:     { bg: 'var(--sky-light)',  color: 'var(--sky)',     icon: '⚡' },
+  Enfermedad: { bg: 'var(--success-bg)', color: 'var(--success)', icon: '🤒' },
 };
 
-function IncidenciaForm({ students, onSave, onCancel }) {
-  const [form, setForm] = useState({ ...EMPTY_INCIDENCIA });
+function IncidenciaForm({ students, onSave, onCancel, loading }) {
+  const [form, setForm] = useState({
+    tipo: TIPOS[0],
+    reporte_papas: 'Si',
+    descripcion: '',
+    estudiante_id: '',
+    estudiante_nombre: '',
+    fecha: new Date().toISOString().split('T')[0],
+    hora: new Date().toTimeString().slice(0, 5),
+  });
   const [studentSearch, setStudentSearch] = useState('');
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -41,7 +40,7 @@ function IncidenciaForm({ students, onSave, onCancel }) {
     e.preventDefault();
     if (!form.estudiante_id) return alert('Selecciona un alumno');
     if (!form.descripcion.trim()) return alert('Escribe una descripción');
-    onSave({ ...form, id: Date.now() });
+    onSave(form);
   };
 
   return (
@@ -92,7 +91,7 @@ function IncidenciaForm({ students, onSave, onCancel }) {
 
         <div className="divider" />
 
-        {/* Tipo de incidencia */}
+        {/* Tipo */}
         <div className="form-group full" style={{ marginBottom: 16 }}>
           <label>Tipo de Incidencia <span className="required">*</span></label>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 6 }}>
@@ -100,17 +99,8 @@ function IncidenciaForm({ students, onSave, onCancel }) {
               const { bg, color, icon } = TIPO_COLOR[t];
               const active = form.tipo === t;
               return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => set('tipo', t)}
-                  style={{
-                    padding: '10px 18px', borderRadius: 'var(--radius)', border: `2px solid ${active ? color : 'var(--gray-200)'}`,
-                    background: active ? bg : '#fff', color: active ? color : 'var(--gray-600)',
-                    fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s',
-                    display: 'flex', alignItems: 'center', gap: 6,
-                  }}
-                >
+                <button key={t} type="button" onClick={() => set('tipo', t)}
+                  style={{ padding: '10px 18px', borderRadius: 'var(--radius)', border: `2px solid ${active ? color : 'var(--gray-200)'}`, background: active ? bg : '#fff', color: active ? color : 'var(--gray-600)', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span>{icon}</span> {t}
                 </button>
               );
@@ -118,22 +108,13 @@ function IncidenciaForm({ students, onSave, onCancel }) {
           </div>
         </div>
 
-        {/* Reporte a papás */}
+        {/* Reporte papás */}
         <div className="form-group full" style={{ marginBottom: 16 }}>
           <label>Reporte a Papás <span className="required">*</span></label>
           <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
             {['Si', 'No'].map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => set('reporte_papas', v)}
-                style={{
-                  padding: '9px 24px', borderRadius: 'var(--radius)', border: `2px solid ${form.reporte_papas === v ? (v === 'Si' ? 'var(--success)' : 'var(--danger)') : 'var(--gray-200)'}`,
-                  background: form.reporte_papas === v ? (v === 'Si' ? 'var(--success-bg)' : 'var(--danger-bg)') : '#fff',
-                  color: form.reporte_papas === v ? (v === 'Si' ? 'var(--success)' : 'var(--danger)') : 'var(--gray-600)',
-                  fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s',
-                }}
-              >
+              <button key={v} type="button" onClick={() => set('reporte_papas', v)}
+                style={{ padding: '9px 24px', borderRadius: 'var(--radius)', border: `2px solid ${form.reporte_papas === v ? (v === 'Si' ? 'var(--success)' : 'var(--danger)') : 'var(--gray-200)'}`, background: form.reporte_papas === v ? (v === 'Si' ? 'var(--success-bg)' : 'var(--danger-bg)') : '#fff', color: form.reporte_papas === v ? (v === 'Si' ? 'var(--success)' : 'var(--danger)') : 'var(--gray-600)', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
                 {v}
               </button>
             ))}
@@ -143,19 +124,14 @@ function IncidenciaForm({ students, onSave, onCancel }) {
         {/* Descripción */}
         <div className="form-group full">
           <label>Descripción <span className="required">*</span></label>
-          <textarea
-            value={form.descripcion}
-            onChange={(e) => set('descripcion', e.target.value)}
-            placeholder="Describe lo ocurrido: cómo sucedió, dónde, qué se hizo..."
-            style={{ minHeight: 100 }}
-            required
-          />
+          <textarea value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)} placeholder="Describe lo ocurrido: cómo sucedió, dónde, qué se hizo..." style={{ minHeight: 100 }} required />
         </div>
       </div>
-
       <div className="modal-footer">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>Cancelar</button>
-        <button type="submit" className="btn btn-primary">Registrar Incidencia</button>
+        <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={loading}>Cancelar</button>
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? <><span className="spinner" />&nbsp;Guardando...</> : 'Registrar Incidencia'}
+        </button>
       </div>
     </form>
   );
@@ -163,41 +139,68 @@ function IncidenciaForm({ students, onSave, onCancel }) {
 
 export default function IncidenciasPage({ students }) {
   const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [formLoading, setFormLoading] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [viewRecord, setViewRecord] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [filterTipo, setFilterTipo] = useState('');
   const [search, setSearch] = useState('');
+  const [alert, setAlert] = useState(null);
+
+  const showAlert = (msg, type = 'success') => {
+    setAlert({ msg, type });
+    setTimeout(() => setAlert(null), 3000);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await db.getIncidencias();
+    if (!error) setRecords(data || []);
+    setLoading(false);
+  };
+
+  const handleSave = async (form) => {
+    setFormLoading(true);
+    const { data, error } = await db.addIncidencia(form);
+    if (!error && data) {
+      setRecords((rs) => [data, ...rs]);
+      setShowAdd(false);
+      showAlert('Incidencia registrada');
+    } else showAlert('Error al guardar', 'error');
+    setFormLoading(false);
+  };
+
+  const handleDelete = async () => {
+    setFormLoading(true);
+    const { error } = await db.deleteIncidencia(confirmDelete.id);
+    if (!error) {
+      setRecords((rs) => rs.filter((r) => r.id !== confirmDelete.id));
+      setConfirmDelete(null);
+      showAlert('Incidencia eliminada');
+    } else showAlert('Error al eliminar', 'error');
+    setFormLoading(false);
+  };
 
   const filtered = records.filter((r) => {
     const q = search.toLowerCase();
-    const matchQ = !q || r.estudiante_nombre.toLowerCase().includes(q);
-    const matchT = !filterTipo || r.tipo === filterTipo;
-    return matchQ && matchT;
+    return (!q || r.estudiante_nombre.toLowerCase().includes(q)) && (!filterTipo || r.tipo === filterTipo);
   });
-
-  const handleSave = (record) => {
-    setRecords((rs) => [record, ...rs]);
-    setShowAdd(false);
-  };
-
-  const handleDelete = (id) => {
-    setRecords((rs) => rs.filter((r) => r.id !== id));
-    setConfirmDelete(null);
-  };
 
   return (
     <div>
-      {/* Stats */}
+      {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+
       <div className="stats-grid" style={{ marginBottom: 20 }}>
         {TIPOS.map((t) => {
           const { bg, color, icon } = TIPO_COLOR[t];
-          const count = records.filter((r) => r.tipo === t).length;
           return (
             <div key={t} style={{ background: bg, borderRadius: 'var(--radius-lg)', padding: '16px 20px', border: '1px solid var(--gray-200)' }}>
               <div style={{ fontSize: 18, marginBottom: 4 }}>{icon}</div>
               <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px', color, marginBottom: 4 }}>{t}</div>
-              <div style={{ fontSize: 26, fontWeight: 700, color }}>{count}</div>
+              <div style={{ fontSize: 26, fontWeight: 700, color }}>{records.filter((r) => r.tipo === t).length}</div>
             </div>
           );
         })}
@@ -221,7 +224,9 @@ export default function IncidenciasPage({ students }) {
         </div>
 
         <div className="table-wrap">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="page-loader"><div className="spinner spin-dark" />Cargando...</div>
+          ) : filtered.length === 0 ? (
             <div className="empty-state">
               <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
               <h3>Sin incidencias registradas</h3>
@@ -282,14 +287,12 @@ export default function IncidenciasPage({ students }) {
         )}
       </div>
 
-      {/* New incidencia modal */}
       {showAdd && (
         <Modal title="Registrar Incidencia" onClose={() => setShowAdd(false)}>
-          <IncidenciaForm students={students} onSave={handleSave} onCancel={() => setShowAdd(false)} />
+          <IncidenciaForm students={students} onSave={handleSave} onCancel={() => setShowAdd(false)} loading={formLoading} />
         </Modal>
       )}
 
-      {/* Detail view modal */}
       {viewRecord && (
         <Modal title="Detalle de Incidencia" onClose={() => setViewRecord(null)}>
           <div className="modal-body">
@@ -320,7 +323,6 @@ export default function IncidenciasPage({ students }) {
         </Modal>
       )}
 
-      {/* Confirm delete */}
       {confirmDelete && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 400 }}>
@@ -334,8 +336,10 @@ export default function IncidenciasPage({ students }) {
               <p style={{ fontSize: 15, color: 'var(--gray-700)' }}>¿Eliminar esta incidencia de <strong>{confirmDelete.estudiante_nombre}</strong>?</p>
             </div>
             <div className="modal-footer" style={{ justifyContent: 'center' }}>
-              <button className="btn btn-ghost" onClick={() => setConfirmDelete(null)}>Cancelar</button>
-              <button className="btn btn-danger" onClick={() => handleDelete(confirmDelete.id)}>Eliminar</button>
+              <button className="btn btn-ghost" onClick={() => setConfirmDelete(null)} disabled={formLoading}>Cancelar</button>
+              <button className="btn btn-danger" onClick={handleDelete} disabled={formLoading}>
+                {formLoading ? <span className="spinner" /> : 'Eliminar'}
+              </button>
             </div>
           </div>
         </div>

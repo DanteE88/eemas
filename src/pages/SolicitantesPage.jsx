@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
 import Icon from '../components/Icon';
+import { db } from '../services/db';
 
 const EMPTY = {
   nombre_completo: '',
@@ -15,6 +16,13 @@ const EMPTY = {
 };
 
 const STATUS_OPTS = ['Pendiente', 'En proceso', 'Admitido', 'No admitido'];
+
+const STATUS_COLOR = {
+  'Pendiente':   'badge-warn',
+  'En proceso':  'badge-blue',
+  'Admitido':    'badge-success',
+  'No admitido': 'badge-gray',
+};
 
 function SolicitanteForm({ initial, onSave, onCancel, loading }) {
   const [form, setForm] = useState(() => initial ? { ...EMPTY, ...initial } : { ...EMPTY });
@@ -83,20 +91,61 @@ function SolicitanteForm({ initial, onSave, onCancel, loading }) {
   );
 }
 
-const STATUS_COLOR = {
-  'Pendiente':    'badge-warn',
-  'En proceso':   'badge-blue',
-  'Admitido':     'badge-success',
-  'No admitido':  'badge-gray',
-};
-
 export default function SolicitantesPage() {
   const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [formLoading, setFormLoading] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [editRecord, setEditRecord] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [alert, setAlert] = useState(null);
+
+  const showAlert = (msg, type = 'success') => {
+    setAlert({ msg, type });
+    setTimeout(() => setAlert(null), 3000);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await db.getSolicitantes();
+    if (!error) setRecords(data || []);
+    setLoading(false);
+  };
+
+  const handleSave = async (form) => {
+    setFormLoading(true);
+    if (editRecord) {
+      const { error } = await db.updateSolicitante(editRecord.id, form);
+      if (!error) {
+        setRecords((rs) => rs.map((r) => r.id === editRecord.id ? { ...r, ...form } : r));
+        setEditRecord(null);
+        showAlert('Solicitante actualizado');
+      } else showAlert('Error al actualizar', 'error');
+    } else {
+      const { data, error } = await db.addSolicitante(form);
+      if (!error && data) {
+        setRecords((rs) => [data, ...rs]);
+        setShowAdd(false);
+        showAlert('Solicitante agregado');
+      } else showAlert('Error al guardar', 'error');
+    }
+    setFormLoading(false);
+  };
+
+  const handleDelete = async () => {
+    setFormLoading(true);
+    const { error } = await db.deleteSolicitante(confirmDelete.id);
+    if (!error) {
+      setRecords((rs) => rs.filter((r) => r.id !== confirmDelete.id));
+      setConfirmDelete(null);
+      showAlert('Solicitante eliminado');
+    } else showAlert('Error al eliminar', 'error');
+    setFormLoading(false);
+  };
 
   const filtered = records.filter((r) => {
     const q = search.toLowerCase();
@@ -105,28 +154,19 @@ export default function SolicitantesPage() {
     return matchQ && matchS;
   });
 
-  const handleSave = (form) => {
-    if (editRecord) {
-      setRecords((rs) => rs.map((r) => r.id === editRecord.id ? { ...r, ...form } : r));
-      setEditRecord(null);
-    } else {
-      setRecords((rs) => [...rs, { ...form, id: Date.now() }]);
-      setShowAdd(false);
-    }
-  };
-
-  const handleDelete = (id) => {
-    setRecords((rs) => rs.filter((r) => r.id !== id));
-    setConfirmDelete(null);
-  };
-
   return (
     <div>
-      {/* Summary stats */}
+      {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+
       <div className="stats-grid" style={{ marginBottom: 20 }}>
         {STATUS_OPTS.map((s) => {
           const count = records.filter((r) => r.status === s).length;
-          const colors = { 'Pendiente': ['#fef3cd','var(--warn)'], 'En proceso': ['var(--sky-light)','var(--sky)'], 'Admitido': ['var(--success-bg)','var(--success)'], 'No admitido': ['var(--gray-100)','var(--gray-500)'] };
+          const colors = {
+            'Pendiente':   ['#fef3cd', 'var(--warn)'],
+            'En proceso':  ['var(--sky-light)', 'var(--sky)'],
+            'Admitido':    ['var(--success-bg)', 'var(--success)'],
+            'No admitido': ['var(--gray-100)', 'var(--gray-500)'],
+          };
           const [bg, color] = colors[s];
           return (
             <div key={s} style={{ background: bg, borderRadius: 'var(--radius-lg)', padding: '16px 20px', border: '1px solid var(--gray-200)' }}>
@@ -155,7 +195,9 @@ export default function SolicitantesPage() {
         </div>
 
         <div className="table-wrap">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="page-loader"><div className="spinner spin-dark" />Cargando...</div>
+          ) : filtered.length === 0 ? (
             <div className="empty-state">
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
@@ -209,13 +251,13 @@ export default function SolicitantesPage() {
 
       {showAdd && (
         <Modal title="Nuevo Solicitante" onClose={() => setShowAdd(false)}>
-          <SolicitanteForm onSave={handleSave} onCancel={() => setShowAdd(false)} loading={false} />
+          <SolicitanteForm onSave={handleSave} onCancel={() => setShowAdd(false)} loading={formLoading} />
         </Modal>
       )}
 
       {editRecord && (
         <Modal title="Editar Solicitante" onClose={() => setEditRecord(null)}>
-          <SolicitanteForm initial={editRecord} onSave={handleSave} onCancel={() => setEditRecord(null)} loading={false} />
+          <SolicitanteForm initial={editRecord} onSave={handleSave} onCancel={() => setEditRecord(null)} loading={formLoading} />
         </Modal>
       )}
 
@@ -229,11 +271,13 @@ export default function SolicitantesPage() {
                   <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
                 </svg>
               </div>
-              <p style={{ fontSize: 15, color: 'var(--gray-700)' }}>¿Eliminar a <strong>{confirmDelete.nombre_completo}</strong>? Esta acción no se puede deshacer.</p>
+              <p style={{ fontSize: 15, color: 'var(--gray-700)' }}>¿Eliminar a <strong>{confirmDelete.nombre_completo}</strong>?</p>
             </div>
             <div className="modal-footer" style={{ justifyContent: 'center' }}>
-              <button className="btn btn-ghost" onClick={() => setConfirmDelete(null)}>Cancelar</button>
-              <button className="btn btn-danger" onClick={() => handleDelete(confirmDelete.id)}>Eliminar</button>
+              <button className="btn btn-ghost" onClick={() => setConfirmDelete(null)} disabled={formLoading}>Cancelar</button>
+              <button className="btn btn-danger" onClick={handleDelete} disabled={formLoading}>
+                {formLoading ? <span className="spinner" /> : 'Eliminar'}
+              </button>
             </div>
           </div>
         </div>
