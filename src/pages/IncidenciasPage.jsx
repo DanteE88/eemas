@@ -7,10 +7,10 @@ import { db } from '../services/db';
 const TIPOS = ['Caida', 'Golpe', 'Crisis', 'Enfermedad'];
 
 const TIPO_COLOR = {
-  Caida:      { bg: '#fef3cd',           color: 'var(--warn)',    icon: '🤕' },
-  Golpe:      { bg: 'var(--danger-bg)',  color: 'var(--danger)',  icon: '🤜' },
-  Crisis:     { bg: 'var(--sky-light)',  color: 'var(--sky)',     icon: '⚡' },
-  Enfermedad: { bg: 'var(--success-bg)', color: 'var(--success)', icon: '🤒' },
+  Caida:      { bg: '#fef3cd',           color: 'var(--warn)'    },
+  Golpe:      { bg: 'var(--danger-bg)',  color: 'var(--danger)'  },
+  Crisis:     { bg: 'var(--sky-light)',  color: 'var(--sky)'     },
+  Enfermedad: { bg: 'var(--success-bg)', color: 'var(--success)' },
 };
 
 function IncidenciaForm({ students, onSave, onCancel, loading }) {
@@ -46,7 +46,6 @@ function IncidenciaForm({ students, onSave, onCancel, loading }) {
   return (
     <form onSubmit={handleSubmit}>
       <div className="modal-body">
-        {/* Student picker */}
         <div className="form-group full" style={{ marginBottom: 20 }}>
           <label>Alumno <span className="required">*</span></label>
           <div style={{ position: 'relative' }}>
@@ -74,7 +73,7 @@ function IncidenciaForm({ students, onSave, onCancel, loading }) {
             )}
           </div>
           {form.estudiante_id && (
-            <p style={{ fontSize: 12, color: 'var(--success)', marginTop: 4 }}>✓ {form.estudiante_nombre}</p>
+            <p style={{ fontSize: 12, color: 'var(--success)', marginTop: 4 }}>Alumno seleccionado: {form.estudiante_nombre}</p>
           )}
         </div>
 
@@ -91,24 +90,22 @@ function IncidenciaForm({ students, onSave, onCancel, loading }) {
 
         <div className="divider" />
 
-        {/* Tipo */}
         <div className="form-group full" style={{ marginBottom: 16 }}>
           <label>Tipo de Incidencia <span className="required">*</span></label>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 6 }}>
             {TIPOS.map((t) => {
-              const { bg, color, icon } = TIPO_COLOR[t];
+              const { bg, color } = TIPO_COLOR[t];
               const active = form.tipo === t;
               return (
                 <button key={t} type="button" onClick={() => set('tipo', t)}
-                  style={{ padding: '10px 18px', borderRadius: 'var(--radius)', border: `2px solid ${active ? color : 'var(--gray-200)'}`, background: active ? bg : '#fff', color: active ? color : 'var(--gray-600)', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>{icon}</span> {t}
+                  style={{ padding: '10px 18px', borderRadius: 'var(--radius)', border: `2px solid ${active ? color : 'var(--gray-200)'}`, background: active ? bg : '#fff', color: active ? color : 'var(--gray-600)', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .15s' }}>
+                  {t}
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Reporte papás */}
         <div className="form-group full" style={{ marginBottom: 16 }}>
           <label>Reporte a Papás <span className="required">*</span></label>
           <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
@@ -121,7 +118,6 @@ function IncidenciaForm({ students, onSave, onCancel, loading }) {
           </div>
         </div>
 
-        {/* Descripción */}
         <div className="form-group full">
           <label>Descripción <span className="required">*</span></label>
           <textarea value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)} placeholder="Describe lo ocurrido: cómo sucedió, dónde, qué se hizo..." style={{ minHeight: 100 }} required />
@@ -195,11 +191,10 @@ export default function IncidenciasPage({ students }) {
 
       <div className="stats-grid" style={{ marginBottom: 20 }}>
         {TIPOS.map((t) => {
-          const { bg, color, icon } = TIPO_COLOR[t];
+          const { bg, color } = TIPO_COLOR[t];
           return (
             <div key={t} style={{ background: bg, borderRadius: 'var(--radius-lg)', padding: '16px 20px', border: '1px solid var(--gray-200)' }}>
-              <div style={{ fontSize: 18, marginBottom: 4 }}>{icon}</div>
-              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px', color, marginBottom: 4 }}>{t}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px', color, marginBottom: 6 }}>{t}</div>
               <div style={{ fontSize: 26, fontWeight: 700, color }}>{records.filter((r) => r.tipo === t).length}</div>
             </div>
           );
@@ -228,7 +223,11 @@ export default function IncidenciasPage({ students }) {
             <div className="page-loader"><div className="spinner spin-dark" />Cargando...</div>
           ) : filtered.length === 0 ? (
             <div className="empty-state">
-              <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                </svg>
+              </div>
               <h3>Sin incidencias registradas</h3>
               <p>Registra la primera incidencia con el botón de arriba.</p>
             </div>
@@ -246,7 +245,7 @@ export default function IncidenciasPage({ students }) {
               </thead>
               <tbody>
                 {filtered.map((r) => {
-                  const { bg, color, icon } = TIPO_COLOR[r.tipo] || {};
+                  const { bg, color } = TIPO_COLOR[r.tipo] || {};
                   return (
                     <tr key={r.id}>
                       <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--gray-500)', whiteSpace: 'nowrap' }}>
@@ -254,8 +253,8 @@ export default function IncidenciasPage({ students }) {
                       </td>
                       <td><span className="student-name">{r.estudiante_nombre}</span></td>
                       <td>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 20, background: bg, color, fontSize: 12, fontWeight: 600 }}>
-                          {icon} {r.tipo}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 20, background: bg, color, fontSize: 12, fontWeight: 600 }}>
+                          {r.tipo}
                         </span>
                       </td>
                       <td>
@@ -296,12 +295,9 @@ export default function IncidenciasPage({ students }) {
       {viewRecord && (
         <Modal title="Detalle de Incidencia" onClose={() => setViewRecord(null)}>
           <div className="modal-body">
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20 }}>
-              <span style={{ fontSize: 36 }}>{TIPO_COLOR[viewRecord.tipo]?.icon}</span>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)' }}>{viewRecord.tipo}</div>
-                <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>{viewRecord.fecha} · {viewRecord.hora}</div>
-              </div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)', marginBottom: 4 }}>{viewRecord.tipo}</div>
+              <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>{viewRecord.fecha} · {viewRecord.hora}</div>
             </div>
             <div className="info-grid" style={{ marginBottom: 20 }}>
               <div className="info-item"><label>Alumno</label><p>{viewRecord.estudiante_nombre}</p></div>

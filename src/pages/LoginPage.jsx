@@ -38,7 +38,7 @@ export default function LoginPage({ onLogin }) {
     });
 
     if (authError || !data.session) {
-      triggerShake(authError?.message || 'Contraseña incorrecta. Intenta de nuevo.');
+      triggerShake('Contraseña incorrecta. Intenta de nuevo.');
     } else {
       onLogin(data.user);
     }
