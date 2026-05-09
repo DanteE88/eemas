@@ -42,13 +42,21 @@ export default function AttendancePage({ students }) {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const presentes = Object.values(attendance).filter((v) => v === 'presente').length;
-  const ausentes = Object.values(attendance).filter((v) => v === 'ausente').length;
+  const presentes    = Object.values(attendance).filter((v) => v === 'presente').length;
+  const ausentes     = Object.values(attendance).filter((v) => v === 'ausente').length;
   const justificados = Object.values(attendance).filter((v) => v === 'justificado').length;
+  const retardos     = Object.values(attendance).filter((v) => v === 'retardo').length;
+
+  const STATUS_COLOR = {
+    presente:    'var(--success)',
+    ausente:     'var(--danger)',
+    justificado: 'var(--warn)',
+    retardo:     'var(--sky)',
+  };
 
   const statusStyle = (val, current) => ({
     padding: '5px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none',
-    background: current === val ? (val === 'presente' ? 'var(--success)' : val === 'ausente' ? 'var(--danger)' : 'var(--warn)') : 'var(--gray-100)',
+    background: current === val ? STATUS_COLOR[val] : 'var(--gray-100)',
     color: current === val ? '#fff' : 'var(--gray-500)',
     transition: 'all .15s',
   });
@@ -57,10 +65,11 @@ export default function AttendancePage({ students }) {
     <div>
       <div className="stats-grid" style={{ marginBottom: 20 }}>
         {[
-          { label: 'Presentes', value: presentes, bg: 'var(--success-bg)', color: 'var(--success)' },
-          { label: 'Ausentes', value: ausentes, bg: 'var(--danger-bg)', color: 'var(--danger)' },
-          { label: 'Justificados', value: justificados, bg: 'var(--warn-bg)', color: 'var(--warn)' },
-          { label: 'Total grupo', value: groupStudents.length, bg: 'var(--sky-light)', color: 'var(--sky)' },
+          { label: 'Presentes',    value: presentes,           bg: 'var(--success-bg)', color: 'var(--success)' },
+          { label: 'Ausentes',     value: ausentes,            bg: 'var(--danger-bg)',  color: 'var(--danger)'  },
+          { label: 'Justificados', value: justificados,        bg: 'var(--warn-bg)',    color: 'var(--warn)'    },
+          { label: 'Retardos',     value: retardos,            bg: 'var(--sky-light)',  color: 'var(--sky)'     },
+          { label: 'Total grupo',  value: groupStudents.length, bg: 'var(--gray-100)', color: 'var(--gray-600)' },
         ].map((s) => (
           <div key={s.label} style={{ background: s.bg, borderRadius: 'var(--radius-lg)', padding: '16px 20px', border: '1px solid var(--gray-200)' }}>
             <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px', color: s.color, marginBottom: 6 }}>{s.label}</div>
@@ -119,7 +128,7 @@ export default function AttendancePage({ students }) {
                   <td style={{ fontSize: 13, color: 'var(--gray-500)' }}>{s.dx || '—'}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                      {['presente', 'ausente', 'justificado'].map((v) => (
+                      {['presente', 'ausente', 'justificado', 'retardo'].map((v) => (
                         <button key={v} style={statusStyle(v, attendance[s.id])} onClick={() => toggle(s.id, v)}>
                           {v.charAt(0).toUpperCase() + v.slice(1)}
                         </button>

@@ -10,20 +10,27 @@ import StudentsPage from './pages/StudentsPage';
 import ProfilePage from './pages/ProfilePage';
 import IDGeneratorPage from './pages/IDGeneratorPage';
 import AttendancePage from './pages/AttendancePage';
+import SolicitantesPage from './pages/SolicitantesPage';
+import IncidenciasPage from './pages/IncidenciasPage';
 import { SCHOOL_NAME } from './config';
+import logoUrl from './assets/logo.js';
 
 const NAV = [
-  { key: 'dashboard', icon: 'chart', label: 'Dashboard' },
-  { key: 'students', icon: 'students', label: 'Alumnos' },
-  { key: 'id-generator', icon: 'card', label: 'Credenciales' },
-  { key: 'attendance', icon: 'attendance', label: 'Asistencia' },
+  { key: 'dashboard',     icon: 'chart',      label: 'Dashboard'      },
+  { key: 'students',      icon: 'students',   label: 'Alumnos'        },
+  { key: 'id-generator',  icon: 'card',       label: 'Credenciales'   },
+  { key: 'attendance',    icon: 'attendance', label: 'Asistencia'     },
+  { key: 'solicitantes',  icon: 'folder',     label: 'Solicitantes'   },
+  { key: 'incidencias',   icon: 'warn',       label: 'Incidencias'    },
 ];
 
 const PAGE_TITLES = {
-  dashboard: 'Dashboard',
-  students: 'Gestión de Alumnos',
+  dashboard:    'Dashboard',
+  students:     'Gestión de Alumnos',
   'id-generator': 'Generador de Credenciales',
-  attendance: 'Control de Asistencia',
+  attendance:   'Control de Asistencia',
+  solicitantes: 'Solicitantes',
+  incidencias:  'Incidencias',
 };
 
 export default function App() {
@@ -122,7 +129,10 @@ export default function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <h1>{SCHOOL_NAME}</h1>
+          {logoUrl
+            ? <img src={logoUrl} alt={SCHOOL_NAME} style={{ height: 36, width: 'auto', objectFit: 'contain', marginBottom: 6 }} />
+            : <h1>{SCHOOL_NAME}</h1>
+          }
           <p>Sistema Escolar</p>
         </div>
         <nav className="sidebar-nav">
@@ -179,6 +189,10 @@ export default function App() {
             <IDGeneratorPage students={students} preselected={idStudent} />
           ) : page === 'attendance' ? (
             <AttendancePage students={students} />
+          ) : page === 'solicitantes' ? (
+            <SolicitantesPage />
+          ) : page === 'incidencias' ? (
+            <IncidenciasPage students={students} />
           ) : null}
         </div>
       </main>

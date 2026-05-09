@@ -10,22 +10,25 @@
 .auth-message.error { background: var(--danger-bg); color: var(--danger); }
 .auth-message.success { background: var(--success-bg); color: var(--success); }
 
-/* ID Card */
-.id-card-preview { width: 340px; height: 210px; background: linear-gradient(135deg, #0f2340 0%, #1a3a5c 60%, #2e7dd1 100%); border-radius: 14px; padding: 16px; color: #fff; position: relative; overflow: hidden; flex-shrink: 0; }
-.id-card-preview::before { content: ''; position: absolute; right: -30px; top: -30px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.06); }
-.id-card-preview::after { content: ''; position: absolute; right: 10px; bottom: -40px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,.04); }
-.id-school-name { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; opacity: .7; }
-.id-school-full { font-size: 11px; font-weight: 600; margin-top: 1px; }
-.id-body { display: flex; gap: 12px; margin-top: 12px; align-items: flex-start; }
-.id-photo { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; border: 2px solid rgba(255,255,255,.3); background: rgba(255,255,255,.1); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+/* ID Card — white background */
+.id-card-preview { width: 340px; height: 210px; background: #fff; border-radius: 14px; padding: 14px 16px; color: var(--navy); position: relative; overflow: hidden; flex-shrink: 0; border: 1px solid var(--gray-200); box-shadow: 0 4px 16px rgba(0,0,0,.10); }
+.id-card-preview::before { content: ''; position: absolute; right: -20px; top: -20px; width: 100px; height: 100px; border-radius: 50%; background: var(--sky-light); }
+.id-card-preview::after { content: ''; position: absolute; right: 20px; bottom: -30px; width: 110px; height: 110px; border-radius: 50%; background: var(--sky-light); opacity: .5; }
+.id-header { display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--navy); padding-bottom: 8px; margin-bottom: 10px; }
+.id-logo-img { height: 28px; width: auto; object-fit: contain; flex-shrink: 0; }
+.id-logo-placeholder { height: 28px; width: 28px; border-radius: 6px; background: var(--sky); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.id-school-name { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gray-500); }
+.id-school-full { font-size: 11px; font-weight: 700; color: var(--navy); margin-top: 1px; }
+.id-body { display: flex; gap: 12px; align-items: flex-start; }
+.id-photo { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; border: 2px solid var(--sky-mid); background: var(--sky-light); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--sky); font-weight: 700; }
 .id-info { flex: 1; }
-.id-name { font-size: 13px; font-weight: 700; line-height: 1.3; }
-.id-grupo { font-size: 10px; opacity: .7; margin-top: 2px; }
-.id-fields { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
-.id-field { font-size: 10px; opacity: .65; }
-.id-field span { opacity: 1; font-weight: 500; }
-.id-matricula { position: absolute; bottom: 12px; right: 14px; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600; opacity: .8; }
-.id-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: var(--gold); }
+.id-name { font-size: 12px; font-weight: 700; line-height: 1.3; color: var(--navy); }
+.id-grupo { font-size: 10px; color: var(--gray-500); margin-top: 2px; }
+.id-fields { margin-top: 6px; display: flex; flex-direction: column; gap: 2px; }
+.id-field { font-size: 10px; color: var(--gray-500); }
+.id-field span { color: var(--gray-800); font-weight: 600; }
+.id-matricula { position: absolute; bottom: 10px; right: 14px; font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 600; color: var(--gray-500); }
+.id-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, var(--navy) 0%, var(--sky) 100%); }
 
 /* Profile */
 .profile-header { display: flex; gap: 24px; align-items: flex-start; margin-bottom: 28px; }
