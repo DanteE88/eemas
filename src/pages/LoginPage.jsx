@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { APP_PASSWORD, SCHOOL_NAME, SCHOOL_FULL, SCHOOL_CITY } from '../config';
+import { APP_PASSWORD, SCHOOL_CITY } from '../config';
+import { logoColor } from '../assets/logo.js';
 
 export default function LoginPage({ onLogin }) {
   const [password, setPassword] = useState('');
@@ -24,9 +25,8 @@ export default function LoginPage({ onLogin }) {
       <div className="auth-card" style={shake ? { animation: 'shake .5s ease' } : {}}>
         <style>{`@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}`}</style>
         <div className="auth-logo">
-          <div className="badge-school">{SCHOOL_NAME}</div>
-          <h1>Bienvenido</h1>
-          <p>{SCHOOL_FULL}</p>
+          <img src={logoColor} alt="EEmás" style={{ width: 160, height: 'auto', objectFit: 'contain', marginBottom: 12 }} />
+          <h1 style={{ fontSize: 22 }}>Bienvenido</h1>
           <p style={{ fontSize: 12, color: 'var(--gray-400)', marginTop: 4 }}>{SCHOOL_CITY}</p>
         </div>
         {error && <div className="auth-message error">{error}</div>}

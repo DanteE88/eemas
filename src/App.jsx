@@ -13,7 +13,7 @@ import AttendancePage from './pages/AttendancePage';
 import SolicitantesPage from './pages/SolicitantesPage';
 import IncidenciasPage from './pages/IncidenciasPage';
 import { SCHOOL_NAME } from './config';
-import logoUrl from './assets/logo.js';
+import { logoColor } from './assets/logo.js';
 
 const NAV = [
   { key: 'dashboard',     icon: 'chart',      label: 'Dashboard'      },
@@ -129,11 +129,10 @@ export default function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          {logoUrl
-            ? <img src={logoUrl} alt={SCHOOL_NAME} style={{ height: 36, width: 'auto', objectFit: 'contain', marginBottom: 6 }} />
-            : <h1>{SCHOOL_NAME}</h1>
-          }
-          <p>Sistema Escolar</p>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '8px 10px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+            <img src={logoColor} alt={SCHOOL_NAME} style={{ height: 52, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          </div>
+          <p style={{ marginTop: 2 }}>Sistema Escolar</p>
         </div>
         <nav className="sidebar-nav">
           {NAV.map((n) => (

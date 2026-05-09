@@ -1,3 +1,5 @@
-// Drop your logo file (logo.png / logo.svg) in this folder and update this import.
-// Example: import logoUrl from './logo.png'; export default logoUrl;
-export default null;
+import logoColor from './logo.png';
+import logoWhite from './logo-white.png';
+
+export default logoColor;
+export { logoColor, logoWhite };
