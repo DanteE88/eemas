@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EEmás · Sistema de Gestión Estudiantil</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0f2340;
+    --navy-light: #1a3a5c;
+    --sky: #2e7dd1;
+    --sky-light: #e8f2fc;
+    --sky-mid: #b3d4f5;
+    --gold: #e8a020;
+    --gold-light: #fef6e4;
+    --success: #1a7a4a;
+    --success-bg: #e6f5ee;
+    --danger: #c0392b;
+    --danger-bg: #fdf0ee;
+    --warn: #b45309;
+    --warn-bg: #fef3cd;
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-400: #94a3b8;
+    --gray-500: #64748b;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1e293b;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.10), 0 2px 4px rgba(0,0,0,.06);
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--gray-50); color: var(--gray-800); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+  #root { min-height: 100vh; }
+
+  /* Layout */
+  .app-shell { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; background: var(--navy); display: flex; flex-direction: column; padding: 0; flex-shrink: 0; position: fixed; height: 100vh; z-index: 100; }
+  .sidebar-logo { padding: 24px 20px 20px; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .sidebar-logo h1 { color: #fff; font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+  .sidebar-logo p { color: rgba(255,255,255,.5); font-size: 12px; margin-top: 2px; }
+  .sidebar-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; color: rgba(255,255,255,.65); font-size: 14px; font-weight: 400; transition: all .15s; border: none; background: none; width: 100%; text-align: left; }
+  .nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .nav-item.active { background: var(--sky); color: #fff; font-weight: 500; }
+  .nav-icon { font-size: 18px; flex-shrink: 0; }
+  .sidebar-footer { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,.1); }
+  .user-pill { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--sky); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { color: rgba(255,255,255,.9); font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { color: rgba(255,255,255,.4); font-size: 11px; }
+  .logout-btn { background: none; border: none; cursor: pointer; color: rgba(255,255,255,.4); padding: 4px; border-radius: 4px; transition: color .15s; }
+  .logout-btn:hover { color: rgba(255,255,255,.8); }
+
+  .main-content { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .page-header { background: #fff; border-bottom: 1px solid var(--gray-200); padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: sticky; top: 0; z-index: 50; }
+  .page-title { font-size: 20px; font-weight: 600; color: var(--navy); letter-spacing: -0.3px; }
+  .page-body { padding: 28px 32px; flex: 1; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all .15s; font-family: 'DM Sans', sans-serif; }
+  .btn-primary { background: var(--sky); color: #fff; }
+  .btn-primary:hover { background: #2268b3; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { background: #a93226; }
+  .btn-ghost { background: transparent; color: var(--gray-600); border: 1px solid var(--gray-200); }
+  .btn-ghost:hover { background: var(--gray-100); }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-icon { padding: 8px; border-radius: 8px; background: transparent; border: none; cursor: pointer; color: var(--gray-500); transition: all .15s; display: inline-flex; align-items: center; }
+  .btn-icon:hover { background: var(--gray-100); color: var(--gray-800); }
+  .btn-icon.danger:hover { background: var(--danger-bg); color: var(--danger); }
+
+  /* Cards */
+  .card { background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--gray-200); box-shadow: var(--shadow); }
+  .card-header { padding: 20px 24px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .card-body { padding: 24px; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); }
+  .stat-label { font-size: 12px; font-weight: 500; color: var(--gray-500); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 600; color: var(--navy); line-height: 1; }
+  .stat-sub { font-size: 13px; color: var(--gray-400); margin-top: 6px; }
+  .stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
+
+  /* Search */
+  .search-bar { position: relative; }
+  .search-bar input { width: 280px; padding: 9px 14px 9px 38px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 14px; font-family: 'DM Sans', sans-serif; background: var(--gray-50); color: var(--gray-800); transition: all .15s; }
+  .search-bar input:focus { outline: none; border-color: var(--sky); background: #fff; box-shadow: 0 0 0 3px rgba(46,125,209,.12); }
+  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 16px; pointer-events: none; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; padding: 11px 16px; font-size: 12px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: .5px; background: var(--gray-50); border-bottom: 1px solid var(--gray-200); white-space: nowrap; }
+  td { padding: 13px 16px; border-bottom: 1px solid var(--gray-100); color: var(--gray-700); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--sky-light); }
+  .avatar-cell { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--gray-200); flex-shrink: 0; }
+  .avatar-initials { width: 36px; height: 36px; border-radius: 50%; background: var(--sky-light); border: 2px solid var(--sky-mid); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--sky); flex-shrink: 0; }
+  .student-name { font-weight: 500; color: var(--gray-800); }
+  .student-id { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--gray-500); }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .badge-success { background: var(--success-bg); color: var(--success); }
+  .badge-warn { background: var(--warn-bg); color: var(--warn); }
+  .badge-gray { background: var(--gray-100); color: var(--gray-600); }
+  .badge-blue { background: var(--sky-light); color: var(--sky); }
+
+  /* Forms */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 13px; font-weight: 500; color: var(--gray-700); }
+  .required { color: var(--danger); margin-left: 2px; }
+  input[type="text"], input[type="email"], input[type="date"], input[type="tel"], select, textarea {
+    padding: 9px 13px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--gray-800); background: #fff; transition: all .15s; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--sky); box-shadow: 0 0 0 3px rgba(46,125,209,.12); }
+  textarea { resize: vertical; min-height: 80px; }
+  .form-actions { display: flex; gap: 10px; justify-content: flex-end; padding-top: 8px; margin-top: 8px; border-top: 1px solid var(--gray-100); }
+  .photo-upload { border: 2px dashed var(--gray-200); border-radius: var(--radius); padding: 20px; text-align: center; cursor: pointer; transition: all .15s; }
+  .photo-upload:hover { border-color: var(--sky); background: var(--sky-light); }
+  .photo-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 0 auto 10px; display: block; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: flex-start; justify-content: center; z-index: 200; padding: 20px; overflow-y: auto; }
+  .modal { background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); width: 100%; max-width: 680px; max-height: none; display: flex; flex-direction: column; margin: auto; }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .modal-title { font-size: 17px; font-weight: 600; color: var(--navy); }
+  .modal-body { padding: 24px; flex: 1; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--gray-100); display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
+
+  /* Auth */
+  .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--navy); padding: 20px; }
+  .auth-card { background: #fff; border-radius: var(--radius-lg); padding: 40px; width: 100%; max-width: 420px; box-shadow: var(--shadow-md); }
+  .auth-logo { text-align: center; margin-bottom: 28px; }
+  .auth-logo h1 { font-size: 28px; font-weight: 700; color: var(--navy); letter-spacing: -0.5px; }
+  .auth-logo p { color: var(--gray-500); font-size: 14px; margin-top: 4px; }
+  .auth-logo .badge-school { display: inline-block; background: var(--sky-light); color: var(--sky); font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; margin-bottom: 10px; }
+  .auth-form { display: flex; flex-direction: column; gap: 16px; }
+  .auth-message { text-align: center; padding: 12px; border-radius: var(--radius); font-size: 13px; margin-top: 4px; }
+  .auth-message.error { background: var(--danger-bg); color: var(--danger); }
+  .auth-message.success { background: var(--success-bg); color: var(--success); }
+
+  /* ID Card */
+  .id-card-preview { width: 340px; height: 210px; background: linear-gradient(135deg, #0f2340 0%, #1a3a5c 60%, #2e7dd1 100%); border-radius: 14px; padding: 16px; color: #fff; position: relative; overflow: hidden; flex-shrink: 0; }
+  .id-card-preview::before { content: ''; position: absolute; right: -30px; top: -30px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.06); }
+  .id-card-preview::after { content: ''; position: absolute; right: 10px; bottom: -40px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,.04); }
+  .id-school-name { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; opacity: .7; }
+  .id-school-full { font-size: 11px; font-weight: 600; margin-top: 1px; }
+  .id-body { display: flex; gap: 12px; margin-top: 12px; align-items: flex-start; }
+  .id-photo { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; border: 2px solid rgba(255,255,255,.3); background: rgba(255,255,255,.1); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .id-info { flex: 1; }
+  .id-name { font-size: 13px; font-weight: 700; line-height: 1.3; }
+  .id-grupo { font-size: 10px; opacity: .7; margin-top: 2px; }
+  .id-fields { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+  .id-field { font-size: 10px; opacity: .65; }
+  .id-field span { opacity: 1; font-weight: 500; }
+  .id-matricula { position: absolute; bottom: 12px; right: 14px; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600; opacity: .8; }
+  .id-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: var(--gold); }
+
+  /* Alerts */
+  .alert { padding: 12px 16px; border-radius: var(--radius); font-size: 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .alert-error { background: var(--danger-bg); color: var(--danger); }
+  .alert-success { background: var(--success-bg); color: var(--success); }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--gray-400); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state h3 { font-size: 16px; font-weight: 500; color: var(--gray-600); margin-bottom: 6px; }
+
+  /* Loading */
+  .spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .page-loader { display: flex; align-items: center; justify-content: center; height: 200px; color: var(--gray-400); gap: 12px; font-size: 14px; }
+  .spin-dark { border-color: rgba(0,0,0,.15); border-top-color: var(--sky); }
+
+  /* Responsive helpers */
+  .flex-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .flex-center { display: flex; align-items: center; gap: 10px; }
+  .mt-4 { margin-top: 16px; }
+  .mt-6 { margin-top: 24px; }
+  .text-sm { font-size: 13px; }
+  .text-muted { color: var(--gray-500); }
+  .divider { height: 1px; background: var(--gray-100); margin: 20px 0; }
+
+  /* Filter row */
+  .filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  select.filter-select { width: auto; padding: 8px 12px; font-size: 13px; }
+
+  /* Profile */
+  .profile-header { display: flex; gap: 24px; align-items: flex-start; margin-bottom: 28px; }
+  .profile-avatar-lg { width: 88px; height: 88px; border-radius: 16px; object-fit: cover; border: 3px solid var(--sky-mid); background: var(--sky-light); flex-shrink: 0; }
+  .profile-info h2 { font-size: 22px; font-weight: 700; color: var(--navy); }
+  .profile-meta { color: var(--gray-500); font-size: 14px; margin-top: 4px; }
+  .info-section { margin-bottom: 24px; }
+  .info-section h4 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-400); margin-bottom: 12px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .info-item label { font-size: 12px; color: var(--gray-400); display: block; }
+  .info-item p { font-size: 14px; font-weight: 500; color: var(--gray-800); margin-top: 2px; }
+
+  /* Config page */
+  .config-section { margin-bottom: 32px; }
+  .config-section h3 { font-size: 15px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+  .config-section p { font-size: 13px; color: var(--gray-500); margin-bottom: 16px; }
+  .allowed-list { display: flex; flex-direction: column; gap: 8px; }
+  .allowed-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 14px; }
+  .code-block { background: var(--gray-800); color: #e2e8f0; padding: 20px 24px; border-radius: var(--radius); font-family: 'DM Mono', monospace; font-size: 13px; line-height: 1.8; overflow-x: auto; white-space: pre; }
+  .code-comment { color: #64748b; }
+  .code-key { color: #93c5fd; }
+  .code-val { color: #86efac; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+// Replace these with your actual Supabase values
+const SUPABASE_URL = 'https://wfibsnkjdzxaygimqksk.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_uNafSXYAoVmPAlvnGp7BFQ_EH19xMzr';
+const SCHOOL_NAME  = 'EEmás';
+const SCHOOL_FULL  = 'Educación Especial Más';
+const SCHOOL_CITY  = 'Ciudad de México';
+
+// Demo mode when no Supabase configured
+const DEMO_MODE = SUPABASE_URL.includes('YOUR_PROJECT');
+
+const supabase = !DEMO_MODE ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+// ─── DEMO DATA ────────────────────────────────────────────────────────────────
+let DEMO_STUDENTS = [
+  { id:'d1', matricula:'CREE-2024-001', nombre_completo:'Ana Lucía Ramírez Torres', dx:'TEA - Leve', fecha_nacimiento:'2015-03-12', status:'Activo', grupo:'A-1', factor_rh:'O+', alergias:'Ninguna', redes_auto:'Ninguna', nombre_madre:'Lucía Torres Méndez', nombre_padre:'Roberto Ramírez Vega', telefono_principal:'6641234567', telefono_secundario:'6649876543', created_at: new Date().toISOString(), foto_url: null },
+  { id:'d2', matricula:'CREE-2024-002', nombre_completo:'Carlos Emilio Vega Soto', dx:'Discapacidad Intelectual', fecha_nacimiento:'2013-07-22', status:'Activo', grupo:'B-2', factor_rh:'A+', alergias:'Penicilina', redes_auto:'Ninguna', nombre_madre:'Sonia Soto Flores', nombre_padre:'Emilio Vega Cruz', telefono_principal:'6645550123', telefono_secundario:'', created_at: new Date().toISOString(), foto_url: null },
+  { id:'d3', matricula:'CREE-2024-003', nombre_completo:'María Fernanda López Díaz', dx:'Síndrome de Down', fecha_nacimiento:'2014-11-05', status:'Activo', grupo:'A-2', factor_rh:'B+', alergias:'Látex', redes_auto:'Ninguna', nombre_madre:'Fernanda Díaz Reyes', nombre_padre:'Juan López Ortiz', telefono_principal:'6643210987', telefono_secundario:'6648765432', created_at: new Date().toISOString(), foto_url: null },
+  { id:'d4', matricula:'CREE-2024-004', nombre_completo:'Diego Sebastián Morales Peña', dx:'TDAH', fecha_nacimiento:'2016-01-30', status:'Baja temporal', grupo:'C-1', factor_rh:'AB-', alergias:'Gluten', redes_auto:'Ninguna', nombre_madre:'Claudia Peña Torres', nombre_padre:'Sebastián Morales Gil', telefono_principal:'6641112233', telefono_secundario:'', created_at: new Date().toISOString(), foto_url: null },
+];
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const calcEdad = (fecha) => {
+  if (!fecha) return '—';
+  const hoy = new Date(), nac = new Date(fecha);
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  if (hoy < new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate())) edad--;
+  return `${edad} años`;
+};
+const initials = (name) => name ? name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase() : '?';
+const fmtDate = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('es-MX', {day:'2-digit',month:'long',year:'numeric'}) : '—';
+const generateMatricula = () => {
+  const yr = new Date().getFullYear();
+  const num = String(Math.floor(Math.random()*900)+100).padStart(3,'0');
+  return `CREE-${yr}-${num}`;
+};
+
+// ─── SUPABASE HELPERS ─────────────────────────────────────────────────────────
+const db = {
+  async getStudents() {
+    if (DEMO_MODE) return { data: DEMO_STUDENTS, error: null };
+    return await supabase.from('estudiantes').select('*').order('nombre_completo');
+  },
+  async addStudent(student) {
+    if (DEMO_MODE) { const s={...student,id:'d'+Date.now(),created_at:new Date().toISOString()}; DEMO_STUDENTS=[...DEMO_STUDENTS,s]; return {data:s,error:null}; }
+    return await supabase.from('estudiantes').insert([student]).select().single();
+  },
+  async updateStudent(id, updates) {
+    if (DEMO_MODE) { DEMO_STUDENTS=DEMO_STUDENTS.map(s=>s.id===id?{...s,...updates}:s); return {data:{...updates,id},error:null}; }
+    return await supabase.from('estudiantes').update(updates).eq('id',id).select().single();
+  },
+  async deleteStudent(id) {
+    if (DEMO_MODE) { DEMO_STUDENTS=DEMO_STUDENTS.filter(s=>s.id!==id); return {error:null}; }
+    return await supabase.from('estudiantes').delete().eq('id',id);
+  },
+  async uploadPhoto(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        // Compress image before storing
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX = 400;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
+          else { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const base64 = canvas.toDataURL('image/jpeg', 0.75);
+          resolve({ url: base64, error: null });
+        };
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve({ url: null, error: 'Error leyendo archivo' });
+      reader.readAsDataURL(file);
+    });
+  }
+};
+
+// ─── ICON COMPONENT ──────────────────────────────────────────────────────────
+function Icon({name, size=16, color='currentColor'}) {
+  const icons = {
+    chart: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/></svg>,
+    students: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    card: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,
+    attendance: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
+    view: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+    edit: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+    trash: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>,
+    search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+    logout: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+    photo: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+    check: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+    warn: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+    folder: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>,
+    info: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+  };
+  return icons[name] || null;
+}
+
+// ─── STUDENT FORM ─────────────────────────────────────────────────────────────
+const GRUPOS = ['Burbuja 1','Burbuja 2','Sensorial 1','Sensorial 2','Pre-lectores','Academia','Juvenil'];
+const FACTORES = ['O+','O-','A+','A-','B+','B-','AB+','AB-'];
+const STATUS_OPTS = ['Activo','Baja','Egresado'];
+const DX_OPTS = ['TEA 1','TEA 2','TEA 3','TDA-H','TRISONOMIA 21','LENGUAJE','DISCP. INTELECTUAL','MOTOR','PARALISIS CEREBRAL','POR DEFINIR','SINDROME WEST','TRAST. GEN. DESARRO.','SIND. MC DERMIND','ATRO. MUSC. ESPINAL','QUISTE ARACNOIDEO','DIXPRASIA'];
+const EMPTY_FORM = { matricula:'', nombre_completo:'', dx:'', fecha_nacimiento:'', status:'Activo', grupo:'A-1', factor_rh:'O+', alergias:'', redes_auto:'', nombre_madre:'', nombre_padre:'', telefono_principal:'', telefono_secundario:'', foto_url:'' };
+
+function StudentForm({ initial, onSave, onCancel, loading }) {
+  const [form, setForm] = useState(() => initial ? { ...EMPTY_FORM, ...initial } : { ...EMPTY_FORM, matricula: generateMatricula() });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(initial?.foto_url || null);
+  const fileRef = useRef();
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handlePhoto = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(form, photoFile);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="modal-body">
+        {/* Photo */}
+        <div className="form-group full" style={{marginBottom:20}}>
+          <label>Foto del Alumno</label>
+          <div className="photo-upload" onClick={() => fileRef.current.click()} style={{display:'flex',alignItems:'center',gap:16,justifyContent:'flex-start',padding:'16px 20px'}}>
+            {photoPreview
+              ? <img src={photoPreview} alt="foto" className="photo-preview" style={{margin:0,width:70,height:70}} />
+              : <div style={{width:70,height:70,borderRadius:'50%',background:'var(--sky-light)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+            }
+            <div>
+              <p style={{fontWeight:500,fontSize:14,color:'var(--sky)'}}>Subir foto</p>
+              <p style={{fontSize:12,color:'var(--gray-400)',marginTop:2}}>JPG, PNG · Máx. 2MB</p>
+            </div>
+          </div>
+          <input type="file" accept="image/*" ref={fileRef} style={{display:'none'}} onChange={handlePhoto} />
+        </div>
+
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Matrícula <span className="required">*</span></label>
+            <input type="text" value={form.matricula} onChange={e=>set('matricula',e.target.value)} required style={{fontFamily:'DM Mono,monospace'}} />
+          </div>
+          <div className="form-group">
+            <label>Fecha de Nacimiento <span className="required">*</span></label>
+            <input type="date" value={form.fecha_nacimiento} onChange={e=>set('fecha_nacimiento',e.target.value)} required />
+          </div>
+          <div className="form-group full">
+            <label>Nombre Completo <span className="required">*</span></label>
+            <input type="text" value={form.nombre_completo} onChange={e=>set('nombre_completo',e.target.value)} required placeholder="Apellido Apellido, Nombre(s)" />
+          </div>
+          <div className="form-group full">
+            <label>Diagnóstico (DX)</label>
+            <select value={form.dx} onChange={e=>set('dx',e.target.value)}>
+              <option value="">Seleccionar diagnóstico...</option>
+              {DX_OPTS.map(d=><option key={d}>{d}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Status</label>
+            <select value={form.status} onChange={e=>set('status',e.target.value)}>
+              {STATUS_OPTS.map(s=><option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Grupo</label>
+            <select value={form.grupo} onChange={e=>set('grupo',e.target.value)}>
+              {GRUPOS.map(g=><option key={g}>{g}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="divider" />
+        <p style={{fontSize:12,fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px',color:'var(--gray-400)',marginBottom:14}}>Información Médica</p>
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Factor RH</label>
+            <select value={form.factor_rh} onChange={e=>set('factor_rh',e.target.value)}>
+              {FACTORES.map(f=><option key={f}>{f}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Alergias</label>
+            <input type="text" value={form.alergias} onChange={e=>set('alergias',e.target.value)} placeholder="Ninguna" />
+          </div>
+          <div className="form-group full">
+            <label>Redes de Apoyo / Terapias</label>
+            <input type="text" value={form.redes_auto} onChange={e=>set('redes_auto',e.target.value)} placeholder="Fonoaudiología, Terapia ocupacional..." />
+          </div>
+        </div>
+
+        <div className="divider" />
+        <p style={{fontSize:12,fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px',color:'var(--gray-400)',marginBottom:14}}>Familia y Contacto</p>
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Nombre de la Madre</label>
+            <input type="text" value={form.nombre_madre} onChange={e=>set('nombre_madre',e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Nombre del Padre</label>
+            <input type="text" value={form.nombre_padre} onChange={e=>set('nombre_padre',e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Teléfono Principal <span className="required">*</span></label>
+            <input type="tel" value={form.telefono_principal} onChange={e=>set('telefono_principal',e.target.value)} required placeholder="664 000 0000" />
+          </div>
+          <div className="form-group">
+            <label>Teléfono Secundario</label>
+            <input type="tel" value={form.telefono_secundario} onChange={e=>set('telefono_secundario',e.target.value)} placeholder="Opcional" />
+          </div>
+        </div>
+      </div>
+      <div className="modal-footer">
+        <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={loading}>Cancelar</button>
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? <><span className="spinner" />&nbsp;Guardando...</> : <>{initial ? 'Actualizar' : 'Agregar'} Alumno</>}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// ─── ID CARD ──────────────────────────────────────────────────────────────────
+function IDCardView({ student }) {
+  return (
+    <div className="id-card-preview" id="id-card-export">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div>
+          <div className="id-school-name">{SCHOOL_NAME}</div>
+          <div className="id-school-full">{SCHOOL_FULL}</div>
+        </div>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      </div>
+      <div className="id-body">
+        {student.foto_url
+          ? <img src={student.foto_url} alt="foto" className="id-photo" />
+          : <div className="id-photo">{initials(student.nombre_completo)}</div>
+        }
+        <div className="id-info">
+          <div className="id-name">{student.nombre_completo}</div>
+          <div className="id-grupo">Grupo: {student.grupo || '—'}</div>
+          <div className="id-fields">
+            <div className="id-field">DX: <span>{student.dx || 'No especificado'}</span></div>
+            <div className="id-field">Nac: <span>{fmtDate(student.fecha_nacimiento)}</span></div>
+            <div className="id-field">RH: <span>{student.factor_rh || '—'}</span></div>
+            <div className="id-field">Tel: <span>{student.telefono_principal}</span></div>
+          </div>
+        </div>
+      </div>
+      <div className="id-matricula">{student.matricula}</div>
+      <div className="id-bar" />
+    </div>
+  );
+}
+
+// ─── PAGES ────────────────────────────────────────────────────────────────────
+function DashboardPage({ students }) {
+  const activos = students.filter(s => s.status === 'Activo').length;
+  const grupos = [...new Set(students.map(s=>s.grupo).filter(Boolean))].length;
+  return (
+    <div>
+      <div className="stats-grid">
+        {[
+          { label:'Total Alumnos', value: students.length, icon:'students', sub:'En el sistema', color:'#e8f2fc' },
+          { label:'Alumnos Activos', value: activos, icon:'check', sub:`${students.length - activos} con otro status`, color:'#e6f5ee' },
+          { label:'Grupos', value: grupos, icon:'info', sub:'Grupos registrados', color:'#fef6e4' },
+          { label:'Con DX', value: students.filter(s=>s.dx).length, icon:'folder', sub:'Con diagnóstico', color:'#f1e8fc' },
+        ].map(s => (
+          <div className="stat-card" key={s.label}>
+            <div className="stat-icon" style={{background:s.color,display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name={s.icon} size={20} color='var(--sky)' /></div>
+            <div className="stat-label">{s.label}</div>
+            <div className="stat-value">{s.value}</div>
+            <div className="stat-sub">{s.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <span style={{fontWeight:600,color:'var(--navy)'}}>Distribución por Grupo</span>
+        </div>
+        <div className="card-body">
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:10}}>
+            {GRUPOS.map(g => {
+              const count = students.filter(s=>s.grupo===g).length;
+              return (
+                <div key={g} style={{background:'var(--gray-50)',borderRadius:'var(--radius)',padding:'14px 16px',border:'1px solid var(--gray-200)'}}>
+                  <div style={{fontSize:18,fontWeight:700,color:'var(--navy)'}}>{count}</div>
+                  <div style={{fontSize:13,color:'var(--gray-500)',marginTop:2}}>{g}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {DEMO_MODE && (
+        <div style={{marginTop:20,padding:'16px 20px',background:'#fef6e4',border:'1px solid #fde68a',borderRadius:'var(--radius)',fontSize:13,color:'#92400e'}}>
+          <strong>Modo Demo</strong> — Para conectar tu base de datos real, edita <code style={{background:'rgba(0,0,0,.08)',padding:'1px 5px',borderRadius:4}}>SUPABASE_URL</code> y <code style={{background:'rgba(0,0,0,.08)',padding:'1px 5px',borderRadius:4}}>SUPABASE_KEY</code> en el archivo HTML. Los datos aquí son de ejemplo.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StudentsPage({ students, onAdd, onEdit, onDelete, onView }) {
+  const [search, setSearch] = useState('');
+  const [filterGrupo, setFilterGrupo] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
+  const filtered = students.filter(s => {
+    const q = search.toLowerCase();
+    const matchQ = !q || s.nombre_completo.toLowerCase().includes(q) || s.matricula.toLowerCase().includes(q) || (s.dx||'').toLowerCase().includes(q);
+    const matchG = !filterGrupo || s.grupo === filterGrupo;
+    const matchS = !filterStatus || s.status === filterStatus;
+    return matchQ && matchG && matchS;
+  });
+
+  const statusColor = (st) => {
+    if (st === 'Activo') return 'badge-success';
+    if (st === 'Baja') return 'badge-warn';
+    if (st === 'Egresado') return 'badge-blue';
+    return 'badge-gray';
+  };
+
+  return (
+    <div>
+      <div className="card">
+        <div className="card-header">
+          <div className="filter-row">
+            <div className="search-bar">
+              <span className="search-icon" style={{display:"flex",alignItems:"center"}}><Icon name="search" size={15} color="var(--gray-400)" /></span>
+              <input type="text" placeholder="Buscar alumno..." value={search} onChange={e=>setSearch(e.target.value)} />
+            </div>
+            <select className="filter-select" value={filterGrupo} onChange={e=>setFilterGrupo(e.target.value)}>
+              <option value="">Todos los grupos</option>
+              {GRUPOS.map(g=><option key={g}>{g}</option>)}
+            </select>
+            <select className="filter-select" value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
+              <option value="">Todos los status</option>
+              {STATUS_OPTS.map(s=><option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <button className="btn btn-primary btn-sm" onClick={onAdd}>+ Nuevo Alumno</button>
+        </div>
+        <div className="table-wrap">
+          {filtered.length === 0 ? (
+            <div className="empty-state">
+              <div style={{display:"flex",justifyContent:"center",marginBottom:12}}><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+              <h3>No se encontraron alumnos</h3>
+              <p>Prueba con otros filtros o agrega un nuevo alumno.</p>
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Alumno</th>
+                  <th>Matrícula</th>
+                  <th>Grupo</th>
+                  <th>DX</th>
+                  <th>Edad</th>
+                  <th>Status</th>
+                  <th>Teléfono</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(s => (
+                  <tr key={s.id}>
+                    <td>
+                      <div className="avatar-cell">
+                        {s.foto_url
+                          ? <img src={s.foto_url} className="avatar" alt="foto" />
+                          : <div className="avatar-initials">{initials(s.nombre_completo)}</div>
+                        }
+                        <span className="student-name">{s.nombre_completo}</span>
+                      </div>
+                    </td>
+                    <td><span className="student-id">{s.matricula}</span></td>
+                    <td><span className="badge badge-blue">{s.grupo || '—'}</span></td>
+                    <td style={{maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.dx || <span className="text-muted">—</span>}</td>
+                    <td>{calcEdad(s.fecha_nacimiento)}</td>
+                    <td><span className={`badge ${statusColor(s.status)}`}>{s.status || '—'}</span></td>
+                    <td>{s.telefono_principal}</td>
+                    <td>
+                      <div style={{display:'flex',gap:4}}>
+                        <button className="btn-icon" title="Ver perfil" onClick={()=>onView(s)}><Icon name="view" size={15} /></button>
+                        <button className="btn-icon" title="Editar" onClick={()=>onEdit(s)}><Icon name="edit" size={15} /></button>
+                        <button className="btn-icon danger" title="Eliminar" onClick={()=>onDelete(s)}><Icon name="trash" size={15} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        {filtered.length > 0 && (
+          <div style={{padding:'10px 20px',borderTop:'1px solid var(--gray-100)',fontSize:13,color:'var(--gray-400)'}}>
+            Mostrando {filtered.length} de {students.length} alumnos
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProfilePage({ student, onBack, onEdit, onGenerateID }) {
+  if (!student) return null;
+  const fields = (items) => (
+    <div className="info-grid">
+      {items.map(([label,val]) => (
+        <div className="info-item" key={label}>
+          <label>{label}</label>
+          <p>{val || '—'}</p>
+        </div>
+      ))}
+    </div>
+  );
+  return (
+    <div>
+      <button className="btn btn-ghost btn-sm" onClick={onBack} style={{marginBottom:20}}>← Volver</button>
+      <div className="profile-header">
+        {student.foto_url
+          ? <img src={student.foto_url} className="profile-avatar-lg" alt="foto" />
+          : <div className="profile-avatar-lg" style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:32}}>{initials(student.nombre_completo)}</div>
+        }
+        <div style={{flex:1}}>
+          <h2>{student.nombre_completo}</h2>
+          <div className="profile-meta">{student.matricula} · Grupo {student.grupo}</div>
+          <div style={{marginTop:8,display:'flex',gap:8}}>
+            <span className={`badge ${student.status==='Activo'?'badge-success':student.status==='Egresado'?'badge-blue':'badge-warn'}`}>{student.status}</span>
+            {student.dx && <span className="badge badge-blue">{student.dx}</span>}
+          </div>
+          <div style={{marginTop:12,display:'flex',gap:8}}>
+            <button className="btn btn-primary btn-sm" onClick={()=>onEdit(student)}>Editar</button>
+            <button className="btn btn-ghost btn-sm" onClick={()=>onGenerateID(student)}>Generar Credencial</button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+        <div className="card">
+          <div className="card-header"><span style={{fontWeight:600,color:'var(--navy)',fontSize:14}}>Datos Generales</span></div>
+          <div className="card-body">
+            {fields([
+              ['Fecha de Nacimiento', fmtDate(student.fecha_nacimiento)],
+              ['Edad', calcEdad(student.fecha_nacimiento)],
+              ['Diagnóstico', student.dx],
+              ['Grupo', student.grupo],
+            ])}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-header"><span style={{fontWeight:600,color:'var(--navy)',fontSize:14}}>Datos Médicos</span></div>
+          <div className="card-body">
+            {fields([
+              ['Factor RH', student.factor_rh],
+              ['Alergias', student.alergias],
+              ['Redes / Terapias', student.redes_auto],
+            ])}
+          </div>
+        </div>
+        <div className="card" style={{gridColumn:'1/-1'}}>
+          <div className="card-header"><span style={{fontWeight:600,color:'var(--navy)',fontSize:14}}>Familia y Contacto</span></div>
+          <div className="card-body">
+            {fields([
+              ['Nombre de la Madre', student.nombre_madre],
+              ['Nombre del Padre', student.nombre_padre],
+              ['Teléfono Principal', student.telefono_principal],
+              ['Teléfono Secundario', student.telefono_secundario],
+            ])}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IDGeneratorPage({ students }) {
+  const [selected, setSelected] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filtered = students.filter(s=>
+    !search || s.nombre_completo.toLowerCase().includes(search.toLowerCase()) || s.matricula.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const exportPDF = async () => {
+    if (!selected) return;
+    setExporting(true);
+    try {
+      const card = document.getElementById('id-card-export');
+      const canvas = await html2canvas(card, { scale: 3, useCORS: true, backgroundColor: null });
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      pdf.addImage(imgData, 'JPEG', 0, 0, 85.6, 54);
+      pdf.save(`credencial-${selected.matricula}.pdf`);
+    } catch (e) { alert('Error al exportar. Intenta de nuevo.'); }
+    setExporting(false);
+  };
+
+  const printCard = () => {
+    const card = document.getElementById('id-card-export');
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><style>*{margin:0;padding:0;box-sizing:border-box;} body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#fff;} @media print{body{margin:0;} .no-print{display:none;}}</style></head><body>`);
+    w.document.write(card.outerHTML);
+    w.document.write(`</body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); w.close(); }, 500);
+  };
+
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24,alignItems:'start'}}>
+      <div className="card">
+        <div className="card-header">
+          <span style={{fontWeight:600,color:'var(--navy)'}}>Seleccionar Alumno</span>
+        </div>
+        <div style={{padding:'12px 20px',borderBottom:'1px solid var(--gray-100)'}}>
+          <div className="search-bar">
+            <span className="search-icon" style={{display:"flex",alignItems:"center"}}><Icon name="search" size={15} color="var(--gray-400)" /></span>
+            <input type="text" placeholder="Buscar..." value={search} onChange={e=>setSearch(e.target.value)} style={{width:'100%'}} />
+          </div>
+        </div>
+        <div style={{maxHeight:400,overflowY:'auto'}}>
+          {filtered.map(s => (
+            <div key={s.id} onClick={()=>setSelected(s)}
+              style={{padding:'12px 20px',cursor:'pointer',borderBottom:'1px solid var(--gray-100)',background:selected?.id===s.id?'var(--sky-light)':'transparent',display:'flex',alignItems:'center',gap:12,transition:'background .15s'}}>
+              {s.foto_url
+                ? <img src={s.foto_url} className="avatar" alt="foto" />
+                : <div className="avatar-initials">{initials(s.nombre_completo)}</div>
+              }
+              <div>
+                <div style={{fontWeight:500,fontSize:14,color:'var(--gray-800)'}}>{s.nombre_completo}</div>
+                <div style={{fontSize:12,color:'var(--gray-400)',fontFamily:'DM Mono,monospace'}}>{s.matricula}</div>
+              </div>
+              {selected?.id===s.id && <span style={{marginLeft:'auto',display:'flex',alignItems:'center'}}><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='var(--sky)' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round'><polyline points='20 6 9 17 4 12'/></svg></span>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="card" style={{marginBottom:16}}>
+          <div className="card-header"><span style={{fontWeight:600,color:'var(--navy)'}}>Vista Previa de Credencial</span></div>
+          <div className="card-body" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:20}}>
+            {selected ? (
+              <>
+                <IDCardView student={selected} />
+                <p style={{fontSize:12,color:'var(--gray-400)',textAlign:'center'}}>Credencial formato CR80 (tarjeta estándar 85.6×54mm)</p>
+                <div style={{display:'flex',gap:10,width:'100%'}}>
+                  <button className="btn btn-primary" style={{flex:1}} onClick={exportPDF} disabled={exporting}>
+                    {exporting ? <><span className="spinner"/>&nbsp;Exportando...</> : 'Exportar PDF'}
+                  </button>
+                  <button className="btn btn-ghost" onClick={printCard}>Imprimir</button>
+                </div>
+              </>
+            ) : (
+              <div className="empty-state" style={{padding:'40px 20px'}}>
+                <div style={{display:"flex",justifyContent:"center",marginBottom:12}}><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+                <h3>Selecciona un alumno</h3>
+                <p>La credencial se generará automáticamente.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AttendancePage({ students }) {
+  const today = new Date().toISOString().split('T')[0];
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [selectedGroup, setSelectedGroup] = useState(GRUPOS[0]);
+  const [attendance, setAttendance] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const groupStudents = students.filter(s => s.grupo === selectedGroup && s.status === 'Activo');
+  const storageKey = `attendance_${selectedDate}_${selectedGroup}`;
+
+  useEffect(() => {
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      setAttendance(JSON.parse(stored));
+    } else {
+      const init = {};
+      groupStudents.forEach(s => { init[s.id] = 'presente'; });
+      setAttendance(init);
+    }
+    setSaved(false);
+  }, [selectedDate, selectedGroup]);
+
+  const toggle = (id, val) => setAttendance(a => ({...a, [id]: val}));
+
+  const saveAttendance = async () => {
+    setSaving(true);
+    localStorage.setItem(storageKey, JSON.stringify(attendance));
+    if (!DEMO_MODE && supabase) {
+      const rows = Object.entries(attendance).map(([estudiante_id, status]) => ({
+        estudiante_id, fecha: selectedDate, status, grupo: selectedGroup
+      }));
+      await supabase.from('asistencia').upsert(rows, { onConflict: 'estudiante_id,fecha' });
+    }
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const presentes = Object.values(attendance).filter(v => v === 'presente').length;
+  const ausentes = Object.values(attendance).filter(v => v === 'ausente').length;
+  const justificados = Object.values(attendance).filter(v => v === 'justificado').length;
+
+  const statusStyle = (val, current) => ({
+    padding: '5px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none',
+    background: current === val ? (val==='presente'?'var(--success)':val==='ausente'?'var(--danger)':'var(--warn)') : 'var(--gray-100)',
+    color: current === val ? '#fff' : 'var(--gray-500)',
+    transition: 'all .15s'
+  });
+
+  return (
+    <div>
+      <div className="stats-grid" style={{marginBottom:20}}>
+        {[
+          {label:'Presentes', value:presentes, bg:'var(--success-bg)', color:'var(--success)'},
+          {label:'Ausentes', value:ausentes, bg:'var(--danger-bg)', color:'var(--danger)'},
+          {label:'Justificados', value:justificados, bg:'var(--warn-bg)', color:'var(--warn)'},
+          {label:'Total grupo', value:groupStudents.length, bg:'var(--sky-light)', color:'var(--sky)'},
+        ].map(s => (
+          <div key={s.label} style={{background:s.bg,borderRadius:'var(--radius-lg)',padding:'16px 20px',border:'1px solid var(--gray-200)'}}>
+            <div style={{fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px',color:s.color,marginBottom:6}}>{s.label}</div>
+            <div style={{fontSize:26,fontWeight:700,color:s.color}}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>
+            <input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}
+              style={{padding:'8px 12px',border:'1px solid var(--gray-200)',borderRadius:'var(--radius)',fontSize:14,fontFamily:'DM Sans,sans-serif'}} />
+            <select value={selectedGroup} onChange={e=>setSelectedGroup(e.target.value)} style={{padding:'8px 12px',border:'1px solid var(--gray-200)',borderRadius:'var(--radius)',fontSize:14,fontFamily:'DM Sans,sans-serif'}}>
+              {GRUPOS.map(g=><option key={g}>{g}</option>)}
+            </select>
+          </div>
+          <button className="btn btn-primary btn-sm" onClick={saveAttendance} disabled={saving}>
+            {saving ? <><span className="spinner"/>&nbsp;Guardando...</> : saved ? 'Guardado' : 'Guardar asistencia'}
+          </button>
+        </div>
+        {groupStudents.length === 0 ? (
+          <div className="empty-state"><h3>Sin alumnos activos en este grupo</h3></div>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Alumno</th>
+                <th>Matrícula</th>
+                <th>DX</th>
+                <th style={{textAlign:'center'}}>Asistencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              {groupStudents.map(s => (
+                <tr key={s.id}>
+                  <td>
+                    <div className="avatar-cell">
+                      {s.foto_url ? <img src={s.foto_url} className="avatar" alt="foto" /> : <div className="avatar-initials">{initials(s.nombre_completo)}</div>}
+                      <span className="student-name">{s.nombre_completo}</span>
+                    </div>
+                  </td>
+                  <td><span className="student-id">{s.matricula}</span></td>
+                  <td style={{fontSize:13,color:'var(--gray-500)'}}>{s.dx || '—'}</td>
+                  <td>
+                    <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+                      {['presente','ausente','justificado'].map(v => (
+                        <button key={v} style={statusStyle(v, attendance[s.id])} onClick={()=>toggle(s.id,v)}>
+                          {v.charAt(0).toUpperCase()+v.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── AUTH PAGES ───────────────────────────────────────────────────────────────
+const APP_PASSWORD = 'eemasdb2026';
+
+function LoginPage({ onLogin }) {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+  const [shake, setShake] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (password === APP_PASSWORD) {
+      sessionStorage.setItem('eemas_auth', '1');
+      onLogin({ email: 'staff@eemas.mx', id: 'staff' });
+    } else {
+      setError('Contraseña incorrecta. Intenta de nuevo.');
+      setShake(true);
+      setTimeout(() => setShake(false), 600);
+      setPassword('');
+    }
+  };
+
+  return (
+    <div className="auth-page">
+      <div className="auth-card" style={shake ? {animation:'shake .5s ease'} : {}}>
+        <style>{`@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}`}</style>
+        <div className="auth-logo">
+          <div className="badge-school">{SCHOOL_NAME}</div>
+          <h1>Bienvenido</h1>
+          <p>{SCHOOL_FULL}</p>
+          <p style={{fontSize:12,color:'var(--gray-400)',marginTop:4}}>{SCHOOL_CITY}</p>
+        </div>
+        {error && <div className="auth-message error">{error}</div>}
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Contraseña de acceso</label>
+            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••••••" required autoFocus />
+          </div>
+          <button type="submit" className="btn btn-primary" style={{width:'100%',justifyContent:'center'}}>
+            Ingresar
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── MODALS ───────────────────────────────────────────────────────────────────
+function Modal({ title, onClose, children }) {
+  useEffect(() => {
+    const esc = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', esc);
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', esc); document.body.style.overflow = ''; };
+  }, [onClose]);
+  return (
+    <div className="modal-overlay" onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}>
+      <div className="modal">
+        <div className="modal-header">
+          <span className="modal-title">{title}</span>
+          <button className="btn-icon" onClick={onClose}>✕</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ConfirmModal({ message, onConfirm, onCancel, loading }) {
+  return (
+    <div className="modal-overlay">
+      <div className="modal" style={{maxWidth:400}}>
+        <div className="modal-body" style={{textAlign:'center',padding:'32px 24px'}}>
+          <div style={{display:"flex",justifyContent:"center",marginBottom:16}}><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <p style={{fontSize:15,color:'var(--gray-700)'}}>{message}</p>
+        </div>
+        <div className="modal-footer" style={{justifyContent:'center'}}>
+          <button className="btn btn-ghost" onClick={onCancel} disabled={loading}>Cancelar</button>
+          <button className="btn btn-danger" onClick={onConfirm} disabled={loading}>
+            {loading ? <><span className="spinner"/>&nbsp;</> : 'Eliminar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+function App() {
+  const [user, setUser] = useState(null);
+  const [page, setPage] = useState('dashboard');
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [viewStudent, setViewStudent] = useState(null);
+  const [editStudent, setEditStudent] = useState(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [formLoading, setFormLoading] = useState(false);
+  const [idStudent, setIdStudent] = useState(null);
+  const [alert, setAlert] = useState(null);
+
+  const showAlert = (msg, type='success') => {
+    setAlert({msg, type});
+    setTimeout(() => setAlert(null), 3500);
+  };
+
+  // Auth - simple password session
+  useEffect(() => {
+    if (sessionStorage.getItem('eemas_auth') === '1') {
+      setUser({ email: 'staff@eemas.mx', id: 'staff' });
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  // Load students
+  useEffect(() => {
+    if (!user) { setLoading(false); return; }
+    loadStudents();
+  }, [user]);
+
+  const loadStudents = async () => {
+    setLoading(true);
+    const { data, error } = await db.getStudents();
+    if (!error) setStudents(data || []);
+    setLoading(false);
+  };
+
+  const handleSave = async (form, photoFile) => {
+    setFormLoading(true);
+    let foto_url = form.foto_url || null;
+
+    if (photoFile) {
+      const { url, error } = await db.uploadPhoto(photoFile);
+      if (!error && url) foto_url = url;
+    }
+
+    const payload = { ...form, foto_url };
+
+    if (editStudent) {
+      const { error } = await db.updateStudent(editStudent.id, payload);
+      if (!error) { showAlert('Alumno actualizado correctamente'); setStudents(ss => ss.map(s=>s.id===editStudent.id?{...s,...payload}:s)); setEditStudent(null); }
+      else showAlert('Error al actualizar', 'error');
+    } else {
+      const { data, error } = await db.addStudent(payload);
+      if (!error && data) { showAlert('Alumno agregado correctamente'); setStudents(ss => [...ss, data]); setShowAdd(false); }
+      else showAlert('Error al agregar. Verifica que la matrícula no exista.', 'error');
+    }
+    setFormLoading(false);
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    setFormLoading(true);
+    const { error } = await db.deleteStudent(confirmDelete.id);
+    if (!error) { showAlert('Alumno eliminado'); setStudents(ss => ss.filter(s=>s.id!==confirmDelete.id)); setConfirmDelete(null); }
+    else showAlert('Error al eliminar', 'error');
+    setFormLoading(false);
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('eemas_auth');
+    setUser(null);
+  };
+
+  if (!user) return <LoginPage onLogin={setUser} />;
+
+  const NAV = [
+    { key:'dashboard', icon:'chart', label:'Dashboard' },
+    { key:'students', icon:'students', label:'Alumnos' },
+    { key:'id-generator', icon:'card', label:'Credenciales' },
+    { key:'attendance', icon:'attendance', label:'Asistencia' },
+  ];
+
+  const pageTitles = { dashboard:'Dashboard', students:'Gestión de Alumnos', 'id-generator':'Generador de Credenciales', attendance:'Control de Asistencia' };
+
+  const currentPage = viewStudent ? 'profile' : page;
+
+  return (
+    <div className="app-shell">
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div className="sidebar-logo">
+          <h1>{SCHOOL_NAME}</h1>
+          <p>Sistema Escolar</p>
+        </div>
+        <nav className="sidebar-nav">
+          {NAV.map(n => (
+            <button key={n.key} className={`nav-item ${page===n.key && !viewStudent ? 'active' : ''}`}
+              onClick={() => { setPage(n.key); setViewStudent(null); }}>
+              <span className="nav-icon"><Icon name={n.icon} size={17} /></span>{n.label}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-footer">
+          <div className="user-pill">
+            <div className="user-avatar">{(user.email||'U')[0].toUpperCase()}</div>
+            <div className="user-info">
+              <div className="user-name">{user.email}</div>
+              <div className="user-role">Personal escolar</div>
+            </div>
+            <button className="logout-btn" onClick={handleLogout} title="Cerrar sesión"><Icon name='logout' size={15} /></button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <main className="main-content">
+        <div className="page-header">
+          <h2 className="page-title">{viewStudent ? viewStudent.nombre_completo : pageTitles[page]}</h2>
+          {page === 'students' && !viewStudent && (
+            <button className="btn btn-primary" onClick={() => setShowAdd(true)}>+ Nuevo Alumno</button>
+          )}
+        </div>
+
+        <div className="page-body">
+          {alert && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
+
+          {loading ? (
+            <div className="page-loader"><div className="spinner spin-dark" />Cargando datos...</div>
+          ) : viewStudent ? (
+            <ProfilePage student={viewStudent} onBack={()=>setViewStudent(null)} onEdit={s=>{setEditStudent(s);setPage('students');setViewStudent(null);}} onGenerateID={s=>{setIdStudent(s);setPage('id-generator');setViewStudent(null);}} />
+          ) : page === 'dashboard' ? (
+            <DashboardPage students={students} />
+          ) : page === 'students' ? (
+            <StudentsPage students={students} onAdd={()=>setShowAdd(true)} onEdit={setEditStudent} onDelete={setConfirmDelete} onView={setViewStudent} />
+          ) : page === 'id-generator' ? (
+            <IDGeneratorPage students={students} preselected={idStudent} />
+          ) : page === 'attendance' ? (
+            <AttendancePage students={students} />
+          ) : null
+          }
+        </div>
+      </main>
+
+      {/* Add Modal */}
+      {showAdd && (
+        <Modal title="Agregar Nuevo Alumno" onClose={()=>setShowAdd(false)}>
+          <StudentForm onSave={handleSave} onCancel={()=>setShowAdd(false)} loading={formLoading} />
+        </Modal>
+      )}
+
+      {/* Edit Modal */}
+      {editStudent && (
+        <Modal title="Editar Alumno" onClose={()=>setEditStudent(null)}>
+          <StudentForm initial={editStudent} onSave={handleSave} onCancel={()=>setEditStudent(null)} loading={formLoading} />
+        </Modal>
+      )}
+
+      {/* Confirm Delete */}
+      {confirmDelete && (
+        <ConfirmModal message={`¿Eliminar a ${confirmDelete.nombre_completo}? Esta acción no se puede deshacer.`} onConfirm={handleDelete} onCancel={()=>setConfirmDelete(null)} loading={formLoading} />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
