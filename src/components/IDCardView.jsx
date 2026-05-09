@@ -1,4 +1,4 @@
-import { SCHOOL_NAME, SCHOOL_FULL } from '../config';
+import { SCHOOL_NAME, SCHOOL_FULL, SCHOOL_PHONE } from '../config';
 import { initials, fmtDate } from '../utils/helpers';
 import { logoColor } from '../assets/logo.js';
 
@@ -27,7 +27,7 @@ export default function IDCardView({ student }) {
             <div className="id-field">DX: <span>{student.dx || 'No especificado'}</span></div>
             <div className="id-field">Nac: <span>{fmtDate(student.fecha_nacimiento)}</span></div>
             <div className="id-field">RH: <span>{student.factor_rh || '—'}</span></div>
-            <div className="id-field">Tel: <span>{student.telefono_principal}</span></div>
+            <div className="id-field">Tel: <span>{SCHOOL_PHONE}</span></div>
           </div>
         </div>
       </div>

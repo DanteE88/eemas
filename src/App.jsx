@@ -12,7 +12,7 @@ import IDGeneratorPage from './pages/IDGeneratorPage';
 import AttendancePage from './pages/AttendancePage';
 import SolicitantesPage from './pages/SolicitantesPage';
 import IncidenciasPage from './pages/IncidenciasPage';
-import { SCHOOL_NAME } from './config';
+import { supabase, DEMO_MODE, SCHOOL_NAME } from './config';
 import { logoColor } from './assets/logo.js';
 
 const NAV = [
@@ -52,11 +52,19 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (sessionStorage.getItem('eemas_auth') === '1') {
-      setUser({ email: 'staff@eemas.mx', id: 'staff' });
-    } else {
-      setLoading(false);
-    }
+    if (DEMO_MODE) { setLoading(false); return; }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setUser(session.user);
+      else setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) setUser(session.user);
+      else { setUser(null); setLoading(false); }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -118,8 +126,8 @@ export default function App() {
     setFormLoading(false);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('eemas_auth');
+  const handleLogout = async () => {
+    if (!DEMO_MODE) await supabase.auth.signOut();
     setUser(null);
   };
 
@@ -130,7 +138,7 @@ export default function App() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <img src={logoColor} alt={SCHOOL_NAME} style={{ width: '100%', maxWidth: 160, height: 'auto', objectFit: 'contain', display: 'block', borderRadius: 10, marginBottom: 6 }} />
-          <p>Sistema Escolar</p>
+          <p>Sistema de Gestión Escolar</p>
         </div>
         <nav className="sidebar-nav">
           {NAV.map((n) => (

@@ -1,23 +1,48 @@
 import { useState } from 'react';
-import { APP_PASSWORD, SCHOOL_CITY } from '../config';
+import { supabase, DEMO_MODE, SCHOOL_CITY } from '../config';
 import { logoColor } from '../assets/logo.js';
+
+const DEMO_PASSWORD = 'demo1234';
 
 export default function LoginPage({ onLogin }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
 
-  const handleSubmit = (e) => {
+  const triggerShake = (msg) => {
+    setError(msg);
+    setShake(true);
+    setTimeout(() => setShake(false), 600);
+    setPassword('');
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password === APP_PASSWORD) {
-      sessionStorage.setItem('eemas_auth', '1');
-      onLogin({ email: 'staff@eemas.mx', id: 'staff' });
-    } else {
-      setError('Contraseña incorrecta. Intenta de nuevo.');
-      setShake(true);
-      setTimeout(() => setShake(false), 600);
-      setPassword('');
+    setLoading(true);
+    setError(null);
+
+    if (DEMO_MODE) {
+      if (password === DEMO_PASSWORD) {
+        onLogin({ email: 'demo@eemas.mx', id: 'demo' });
+      } else {
+        triggerShake('Contraseña incorrecta. Intenta de nuevo.');
+      }
+      setLoading(false);
+      return;
     }
+
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email: 'staff@eemas.mx',
+      password,
+    });
+
+    if (authError || !data.session) {
+      triggerShake(authError?.message || 'Contraseña incorrecta. Intenta de nuevo.');
+    } else {
+      onLogin(data.user);
+    }
+    setLoading(false);
   };
 
   return (
@@ -40,10 +65,11 @@ export default function LoginPage({ onLogin }) {
               placeholder="••••••••••••"
               required
               autoFocus
+              disabled={loading}
             />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-            Ingresar
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
+            {loading ? <><span className="spinner" />&nbsp;Verificando...</> : 'Ingresar'}
           </button>
         </form>
       </div>
