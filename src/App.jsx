@@ -129,10 +129,8 @@ export default function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <div style={{ background: '#fff', borderRadius: 12, padding: '8px 10px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-            <img src={logoColor} alt={SCHOOL_NAME} style={{ height: 52, width: 'auto', objectFit: 'contain', display: 'block' }} />
-          </div>
-          <p style={{ marginTop: 2 }}>Sistema Escolar</p>
+          <img src={logoColor} alt={SCHOOL_NAME} style={{ width: '100%', maxWidth: 160, height: 'auto', objectFit: 'contain', display: 'block', borderRadius: 10, marginBottom: 6 }} />
+          <p>Sistema Escolar</p>
         </div>
         <nav className="sidebar-nav">
           {NAV.map((n) => (
