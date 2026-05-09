@@ -37,7 +37,7 @@ export const EMPTY_FORM = {
   dx: '',
   fecha_nacimiento: '',
   status: 'Activo',
-  grupo: 'A-1',
+  grupo: 'Burbuja 1',
   factor_rh: 'O+',
   alergias: '',
   redes_auto: '',
